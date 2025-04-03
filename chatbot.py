@@ -8,7 +8,7 @@
 import openai
 import textwrap
 
-DEBUG = 1
+DEBUG = 0
 
 global_model = "llama-3.2-1b-instruct"
 global_messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
@@ -116,6 +116,7 @@ def main():
         
         print("\nChatbot:")
         wrapped_response = textwrap.fill(bot_response, width=70)
+        wrapped_response = bot_response
         print(wrapped_response)
         print("\n" + "-" * 70 + "\n")
 
