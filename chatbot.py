@@ -29,12 +29,16 @@ def send_to_AI(text_to_AI):
 
     # Define the request parameters
     dprint(f"Sending AI: `{text_to_AI[:20]} ... {text_to_AI[-20:]}`")
-    response = client.chat.completions.create(
-        model=global_model,  # Adjust the model name based on what's running in LM Studio
-        messages=global_messages,
-        temperature=global_temp
-    )
-    resp_text = response.choices[0].message.content
+    
+    try:
+        response = client.chat.completions.create(
+            model=global_model,  # Adjust the model name based on what's running in LM Studio
+            messages=global_messages,
+            temperature=global_temp
+        )
+        resp_text = response.choices[0].message.content
+    except:
+        resp_text = "[ ** COULD NOT REACH LLM SERVER ** ]"
 
     global_messages.append( {"role": "assistant", "content": resp_text} )
 
@@ -56,7 +60,7 @@ def main():
         print("You: ", end="")
         while True:
             line = input()
-            if line.strip() == "":  # Stop input on blank line
+            if line.strip() == "/END":  # Stop input on blank line
                 break
             user_input_lines.append(line)
         

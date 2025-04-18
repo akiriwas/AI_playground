@@ -5,7 +5,7 @@ import faiss
 
 global_model = "text-embedding-nomic-embed-text-v1.5"
 
-# Example texts - each of these strings is representative of an entire document.
+# Example texts
 documents = [
     "The Apollo program landed the first humans on the Moon.",
     "Artificial intelligence is transforming the world.",
@@ -29,13 +29,11 @@ documents = [
     "Urbanization presents both opportunities and challenges for cities."
 ]
 
-# DEBUG global variable for certain debug prints
-DEBUG = 0
+DEBUG = 1
 
 def dprint(s):
     if DEBUG == 1:
         print(s)
-
 
 
 def generate_embedding(text_to_AI):
@@ -52,42 +50,34 @@ def generate_embedding(text_to_AI):
     return response.data[0].embedding
     #return response["data"][0]["embedding"]
 
+# Assumes that these are vector lists.
+def cosine_similarity(a, b):
+    dot_product = sum([x * y for x, y in zip(a, b)])
+    norm_a = sum([x ** 2 for x in a]) ** 0.5
+    norm_b = sum([x ** 2 for x in b]) ** 0.5
+    return dot_product / (norm_a * norm_b)
 
 def main():
-    # Generate embeddings
-    embeddings = [generate_embedding(doc) for doc in documents]
-    #embeddings = [ollama.embeddings(model="nomic-embed-text", prompt=doc)['embedding'] for doc in documents]
-    dprint(embeddings)
-
-    # Convert to NumPy array for FAISS
-    embeddings_np = np.array(embeddings).astype('float32')
-    dprint(embeddings_np)
-
-    # Initialize FAISS index
-    index = faiss.IndexFlatL2(embeddings_np.shape[1])  # L2 distance
-    index.add(embeddings_np)  # Add vectors to index
+    #Put the embeddings AND the appropriate text into a list
+    vector_db = [(doc, generate_embedding(doc)) for doc in documents]
 
     # Query Example
     query = "Tell me about the Moon landing"
-    query_embedding = np.array(generate_embedding(query)).astype('float32').reshape(1,-1)
-    #query_embedding = np.array([ollama.embeddings(model="nomic-embed-text", prompt=query)['embedding']]).astype('float32')
-    dprint(query_embedding)
+    query_embedding = generate_embedding(query)
+    dprint(str(len(query_embedding)) + ": " + str(query_embedding))
 
-    # Search for similar documents
-    D, I = index.search(query_embedding, k=2)  # Retrieve top 2 closest matches
-    dprint("D:\n")
-    dprint(D)
-    dprint("I:\n")
-    dprint(I)
+    similarities = []
+    for doc, embedding in vector_db:
+        similarity = cosine_similarity(query_embedding, embedding)
+        similarities.append((doc, similarity))
 
-    # Print results
+    similarities.sort(key=lambda x: x[1], reverse=True)
+    
     print("Query:", query)
     print("Top Matches:")
-    for i in range(len(I[0])):
-        print(f"- {documents[I[0][i]]} (score: {D[0][i]})")
-
-    #for i in I[0]:
-    #    print(f"- {documents[i]} (score: {D[0][i]})")
+    ret = similarities[:2]
+    for doc, similarity in similarities[:2]:
+        print(f"- {doc} (score: {similarity})")
 
 
 
